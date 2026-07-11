@@ -5,17 +5,24 @@ import DepthChart from './components/DepthChart';
 import AnalysisPanel from './components/AnalysisPanel';
 import './App.css';
 
+const ASSETS = [
+  { id: 'BTCUSDT', name: 'Bitcoin', icon: '₿' },
+  { id: 'ETHUSDT', name: 'Ethereum', icon: 'Ξ' },
+  { id: 'BNBUSDT', name: 'Binance Coin', icon: '🟡' },
+  { id: 'SOLUSDT', name: 'Solana', icon: '◎' },
+  { id: 'ZECUSDT', name: 'Zcash', icon: 'ⓩ' },
+  { id: 'SPCXUSDT', name: 'SPCX (Simulado)', icon: '🧪' }
+];
+
 function App() {
   const [symbol, setSymbol] = useState('BTCUSDT');
-  const [inputSymbol, setInputSymbol] = useState('BTCUSDT');
-  const { data, stats, insights } = useOrderBook(symbol);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const handleSymbolChange = (e) => {
-    e.preventDefault();
-    if (inputSymbol.trim()) {
-      setSymbol(inputSymbol.toUpperCase());
-    }
-  };
+  const { data, stats, insights, isConnected } = useOrderBook(symbol);
+
+  const selectedAsset = ASSETS.find(a => a.id === symbol);
 
   return (
     <div className="app-container">
@@ -25,37 +32,109 @@ function App() {
           <h1>OrderFlow Pro</h1>
         </div>
         
-        <form className="symbol-form" onSubmit={handleSymbolChange}>
-          <input 
-            type="text" 
-            value={inputSymbol} 
-            onChange={(e) => setInputSymbol(e.target.value)} 
-            placeholder="Ej. BTCUSDT"
-            className="symbol-input"
-          />
-          <button type="submit" className="btn-search">Cambiar Activo</button>
-        </form>
+        <div className="asset-selector-container">
+          <button 
+            className="asset-dropdown-btn" 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          >
+            <span className="asset-icon">{selectedAsset?.icon}</span>
+            <span className="asset-name">{selectedAsset?.id}</span>
+            <span className="dropdown-arrow">▼</span>
+          </button>
+          
+          {isDropdownOpen && (
+            <div className="asset-dropdown-menu">
+              {ASSETS.map(asset => (
+                <button 
+                  key={asset.id}
+                  className={`dropdown-item ${symbol === asset.id ? 'active' : ''}`}
+                  onClick={() => {
+                    setSymbol(asset.id);
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  <span className="asset-icon">{asset.icon}</span>
+                  <div className="asset-info">
+                    <span className="asset-symbol">{asset.id}</span>
+                    <span className="asset-fullname">{asset.name}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="header-actions">
-          <button className="btn-icon">⚙️</button>
+          <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
+            {isConnected ? 'Online' : 'Conectando...'}
+          </div>
+          <button className="btn-icon" onClick={() => setIsSettingsOpen(true)}>⚙️</button>
         </div>
       </header>
 
       <main className="main-content">
-        <div className="left-column">
-          <AnalysisPanel stats={stats} symbol={symbol} insights={insights} />
-          <DepthChart data={data} />
-        </div>
-        
-        <div className="right-column">
-          <OrderBook data={data} />
-          
-          <div className="trade-actions">
-            <button className="btn-trade btn-buy">Buy Long</button>
-            <button className="btn-trade btn-sell">Sell Short</button>
+        {!isConnected ? (
+          <div className="loading-screen">
+            <div className="loader"></div>
+            <h2>Conectando al mercado...</h2>
+            <p>Estableciendo enlace seguro con Binance Futures para {symbol}</p>
+          </div>
+        ) : (
+          <>
+            <div className="left-column">
+              <AnalysisPanel stats={stats} symbol={symbol} insights={insights} />
+              <DepthChart data={data} />
+            </div>
+            
+            <div className="right-column">
+              <OrderBook data={data} />
+              <div className="trade-actions">
+                <button className="btn-trade btn-buy">Buy Long</button>
+                <button className="btn-trade btn-sell">Sell Short</button>
+              </div>
+            </div>
+          </>
+        )}
+      </main>
+
+      {/* Settings Modal */}
+      {isSettingsOpen && (
+        <div className="modal-overlay" onClick={() => setIsSettingsOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Configuración</h2>
+              <button className="btn-close" onClick={() => setIsSettingsOpen(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="setting-group">
+                <label>Tema Visual</label>
+                <select className="setting-select" disabled>
+                  <option>Oscuro Profesional (Activo)</option>
+                  <option>Claro (Próximamente)</option>
+                </select>
+              </div>
+              <div className="setting-group">
+                <label>Alertas de Sonido</label>
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={soundEnabled} 
+                    onChange={(e) => setSoundEnabled(e.target.checked)} 
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+              <div className="setting-group">
+                <label>Servidor de Datos</label>
+                <div className="server-info">
+                  <span className="server-dot"></span>
+                  wss://fstream.binance.com
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
