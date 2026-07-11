@@ -1,0 +1,128 @@
+.analysis-panel {
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-bottom: 24px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.symbol-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.symbol-info h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.badge {
+  background-color: var(--bg-hover);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-buy);
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-buy);
+  border-radius: 50%;
+}
+
+.pulse {
+  box-shadow: 0 0 0 0 rgba(14, 203, 129, 0.7);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 203, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(14, 203, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 203, 129, 0); }
+}
+
+/* Pressure Bar */
+.pressure-container {
+  margin-bottom: 24px;
+}
+
+.pressure-labels {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.pressure-bar-bg {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-sell); /* Red background for sell side */
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pressure-bar-fill {
+  height: 100%;
+  background-color: var(--color-buy); /* Green fill for buy side */
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 4px 0 0 4px;
+}
+
+/* AI Insights */
+.ai-insights h3 {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.insight-card {
+  background: linear-gradient(145deg, rgba(252,213,53,0.1) 0%, rgba(24,26,32,0) 100%);
+  border: 1px solid rgba(252,213,53,0.2);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.insight-icon {
+  font-size: 24px;
+}
+
+.insight-text strong {
+  display: block;
+  color: var(--color-highlight);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.insight-text p {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.4;
+}
