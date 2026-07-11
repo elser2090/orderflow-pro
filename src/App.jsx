@@ -8,7 +8,7 @@ import './App.css';
 function App() {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [inputSymbol, setInputSymbol] = useState('BTCUSDT');
-  const { data, stats } = useOrderBook(symbol);
+  const { data, stats, insights } = useOrderBook(symbol);
 
   const handleSymbolChange = (e) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ function App() {
 
       <main className="main-content">
         <div className="left-column">
-          <AnalysisPanel stats={stats} symbol={symbol} />
+          <AnalysisPanel stats={stats} symbol={symbol} insights={insights} />
           <DepthChart data={data} />
         </div>
         

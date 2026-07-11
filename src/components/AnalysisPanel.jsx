@@ -1,7 +1,7 @@
 import React from 'react';
 import './AnalysisPanel.css';
 
-export default function AnalysisPanel({ stats, symbol }) {
+export default function AnalysisPanel({ stats, symbol, insights = [] }) {
   const { buyPressure, sellPressure } = stats;
   
   return (
@@ -32,13 +32,27 @@ export default function AnalysisPanel({ stats, symbol }) {
 
       <div className="ai-insights">
         <h3>AI Pattern Recognition</h3>
-        <div className="insight-card">
-          <span className="insight-icon">🔍</span>
-          <div className="insight-text">
-            <strong>Strong Buy Wall Detected</strong>
-            <p>Significant liquidity concentrated at 145.00 USDT</p>
+        {insights.length === 0 ? (
+          <div className="insight-card empty-insight">
+            <span className="insight-icon">⏳</span>
+            <div className="insight-text">
+              <strong>Escaneando el mercado...</strong>
+              <p>Esperando a detectar patrones de liquidez o manipulaciones.</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="insights-list">
+            {insights.map(insight => (
+              <div key={insight.id} className={`insight-card severity-${insight.severity}`}>
+                <span className="insight-icon">{insight.icon}</span>
+                <div className="insight-text">
+                  <strong>{insight.title}</strong>
+                  <p>{insight.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
