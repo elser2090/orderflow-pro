@@ -12,16 +12,29 @@ export function useOrderBook(symbol = 'BTCUSDT') {
   // Nuevos estados profesionales
   const [supportPrice, setSupportPrice] = useState(null);
   const [resistancePrice, setResistancePrice] = useState(null);
-  const [momentum, setMomentum] = useState(50); // 0 (Bearish) a 100 (Bullish)
+  const [momentum, setMomentum] = useState(50);
+  
+  // Estados de la suite analítica avanzada
+  const [cvdHistory, setCvdHistory] = useState([]);
+  const [tapeSpeed, setTapeSpeed] = useState(0);
+  const [nearDepth, setNearDepth] = useState({
+    bids05: 0, asks05: 0,
+    bids10: 0, asks10: 0
+  });
+  const [recentTrades, setRecentTrades] = useState([]);
 
-  // Referencias para optimización y lógica interna
+  // Referencias para optimización y cálculo interno
   const previousWallsRef = useRef({ bidWall: null, askWall: null });
   const activeAlertsRef = useRef([]);
   const latestDataRef = useRef(null);
   
-  // Referencias para Whale Detection
+  // Referencias para Whale Detection y CVD
   const recentTradesRef = useRef([]);
   const momentumWindowRef = useRef([]);
+  const runningCvdRef = useRef(0);
+  const cvdHistoryRef = useRef([]);
+  const tradeTimestampsRef = useRef([]);
+  const recentTradesFeedRef = useRef([]);
 
   useEffect(() => {
     let wsDepth = null;
@@ -38,16 +51,30 @@ export function useOrderBook(symbol = 'BTCUSDT') {
     setSupportPrice(null);
     setResistancePrice(null);
     setMomentum(50);
+    setCvdHistory([]);
+    setTapeSpeed(0);
+    setNearDepth({ bids05: 0, asks05: 0, bids10: 0, asks10: 0 });
+    setRecentTrades([]);
+    
     activeAlertsRef.current = [];
     previousWallsRef.current = { bidWall: null, askWall: null };
     latestDataRef.current = null;
     recentTradesRef.current = [];
     momentumWindowRef.current = [];
+    runningCvdRef.current = 0;
+    cvdHistoryRef.current = Array(50).fill(0);
+    tradeTimestampsRef.current = [];
+    recentTradesFeedRef.current = [];
 
     // Bucle de actualización visual optimizado (4 veces por segundo)
     uiUpdateInterval = setInterval(() => {
       if (latestDataRef.current) {
-        const { newData, newStats, newInsights, newPrice, newSupport, newResistance, newMomentum } = latestDataRef.current;
+        const { 
+          newData, newStats, newInsights, newPrice, 
+          newSupport, newResistance, newMomentum,
+          newNearDepth, newCvdHistory, newTapeSpeed, newRecentTrades
+        } = latestDataRef.current;
+        
         setData(newData);
         setStats(newStats);
         setInsights(newInsights);
@@ -55,6 +82,10 @@ export function useOrderBook(symbol = 'BTCUSDT') {
         setSupportPrice(newSupport);
         setResistancePrice(newResistance);
         setMomentum(newMomentum);
+        setNearDepth(newNearDepth);
+        setCvdHistory(newCvdHistory);
+        setTapeSpeed(newTapeSpeed);
+        setRecentTrades(newRecentTrades);
       }
     }, 250);
 
@@ -131,6 +162,25 @@ export function useOrderBook(symbol = 'BTCUSDT') {
         sellPressure: sellPressureNum.toFixed(2)
       };
 
+      // Ratios de Profundidad Cercana (0.5% y 1.0%)
+      let bids05 = 0, bids10 = 0;
+      responseBids.forEach(b => {
+        const price = parseFloat(b[0]);
+        const amount = parseFloat(b[1]);
+        if (price >= livePrice * 0.995) bids05 += amount;
+        if (price >= livePrice * 0.990) bids10 += amount;
+      });
+
+      let asks05 = 0, asks10 = 0;
+      responseAsks.forEach(a => {
+        const price = parseFloat(a[0]);
+        const amount = parseFloat(a[1]);
+        if (price <= livePrice * 1.005) asks05 += amount;
+        if (price <= livePrice * 1.010) asks10 += amount;
+      });
+
+      const newNearDepth = { bids05, asks05, bids10, asks10 };
+
       // ALGORITMOS DE INSIGHTS
       const currentInsights = [];
       const avgBidAmount = tBid / 20;
@@ -187,6 +237,17 @@ export function useOrderBook(symbol = 'BTCUSDT') {
           newMomentum = (buyVol / total) * 100;
         }
       }
+
+      // Calculate SOT (Speed of Tape) in the last 1 second
+      const oneSecAgo = now - 1000;
+      tradeTimestampsRef.current = tradeTimestampsRef.current.filter(ts => ts > oneSecAgo);
+      const newTapeSpeed = tradeTimestampsRef.current.length;
+
+      // Update CVD history Sparkline
+      cvdHistoryRef.current.push(runningCvdRef.current);
+      if (cvdHistoryRef.current.length > 50) {
+        cvdHistoryRef.current.shift();
+      }
       
       const newInsightsList = [...currentInsights, ...activeAlertsRef.current.filter(a => a.expires > now)];
 
@@ -197,7 +258,11 @@ export function useOrderBook(symbol = 'BTCUSDT') {
         newPrice: livePrice,
         newSupport: currentBidWall ? bidWallPriceStr : null,
         newResistance: currentAskWall ? askWallPriceStr : null,
-        newMomentum: newMomentum
+        newMomentum: newMomentum,
+        newNearDepth,
+        newCvdHistory: [...cvdHistoryRef.current],
+        newTapeSpeed,
+        newRecentTrades: [...recentTradesFeedRef.current]
       };
     };
 
@@ -208,9 +273,35 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       const now = Date.now();
       const timeStr = new Date(now).toLocaleTimeString();
 
+      // SOT metric
+      tradeTimestampsRef.current.push(now);
+
+      // CVD logic: buy adds, sell subtracts
+      const tradeVolumeUsdt = qty * price;
+      if (isBuyerMaker) {
+        runningCvdRef.current -= tradeVolumeUsdt; // Market Sell
+      } else {
+        runningCvdRef.current += tradeVolumeUsdt; // Market Buy
+      }
+
+      // Live recent trades feed update
+      const newTradeItem = {
+        id: trade.a || Math.random(),
+        price: price.toFixed(price < 100 ? 4 : 2),
+        qty: qty.toFixed(qty < 1 ? 4 : 2),
+        side: isBuyerMaker ? 'sell' : 'buy',
+        time: timeStr.split(' ')[0], // only HH:MM:SS
+        usd: tradeVolumeUsdt.toFixed(0)
+      };
+      
+      recentTradesFeedRef.current.unshift(newTradeItem);
+      if (recentTradesFeedRef.current.length > 25) {
+        recentTradesFeedRef.current.pop();
+      }
+
       // Update Momentum window
       momentumWindowRef.current.push({ qty, isBuyerMaker, time: now });
-      momentumWindowRef.current = momentumWindowRef.current.filter(t => now - t.time < 5000); // 5 sec rolling window
+      momentumWindowRef.current = momentumWindowRef.current.filter(t => now - t.time < 5000);
 
       // Update average trade volume
       recentTradesRef.current.push(qty);
@@ -221,8 +312,8 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       if (recentTradesRef.current.length > 20) {
         const avgTradeQty = recentTradesRef.current.reduce((a, b) => a + b, 0) / recentTradesRef.current.length;
         
-        // Whale Detection: > 500% of average AND > $10,000 USDT (to filter out penny whales)
-        if (qty > avgTradeQty * 5 && (qty * price) > 10000) {
+        // Whale Detection: > 500% of average AND > $10,000 USDT
+        if (qty > avgTradeQty * 5 && tradeVolumeUsdt > 10000) {
           const type = isBuyerMaker ? "Venta" : "Compra";
           const icon = isBuyerMaker ? "🔴" : "🟢";
           const alert = {
@@ -230,7 +321,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
             type: 'WHALE',
             icon: icon,
             title: `Ballena de ${type}`,
-            message: `Ejecución: ${qty.toFixed(2)} a ${price.toFixed(2)}`,
+            message: `Ejecución: ${qty.toFixed(2)} a ${price.toFixed(2)} ($${tradeVolumeUsdt.toLocaleString()})`,
             severity: 'critical',
             time: timeStr
           };
@@ -251,7 +342,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       }
     };
 
-    // WebSocket para Operaciones (AggTrades - Detección de Ballenas)
+    // WebSocket para Operaciones (AggTrades)
     wsTrade = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@aggTrade`);
     wsTrade.onmessage = (event) => {
       const response = JSON.parse(event.data);
@@ -267,5 +358,9 @@ export function useOrderBook(symbol = 'BTCUSDT') {
     };
   }, [symbol]);
 
-  return { data, stats, insights, history, currentPrice, isConnected, supportPrice, resistancePrice, momentum };
+  return { 
+    data, stats, insights, history, currentPrice, isConnected, 
+    supportPrice, resistancePrice, momentum,
+    cvdHistory, tapeSpeed, nearDepth, recentTrades
+  };
 }

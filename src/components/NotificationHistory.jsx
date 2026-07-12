@@ -16,7 +16,10 @@ export default function NotificationHistory({ history }) {
           </div>
         ) : (
           history.map((event, idx) => (
-            <div key={`${event.id}-${idx}`} className={`history-item history-${event.severity}`}>
+            <div 
+              key={`${event.id}-${idx}`} 
+              className={`history-item history-${event.severity} type-${(event.type || 'info').toLowerCase()} ${event.title.includes('Compra') ? 'side-buy' : event.title.includes('Venta') ? 'side-sell' : ''}`}
+            >
               <div className="history-time">{event.time}</div>
               <div className="history-icon">{event.icon}</div>
               <div className="history-content">

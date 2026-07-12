@@ -4,6 +4,7 @@ import OrderBook from './components/OrderBook';
 import DepthChart from './components/DepthChart';
 import AnalysisPanel from './components/AnalysisPanel';
 import NotificationHistory from './components/NotificationHistory';
+import RecentTrades from './components/RecentTrades';
 import './App.css';
 
 const ASSETS = [
@@ -23,7 +24,8 @@ function App() {
 
   const { 
     data, stats, insights, history, currentPrice, isConnected, 
-    supportPrice, resistancePrice, momentum 
+    supportPrice, resistancePrice, momentum,
+    cvdHistory, tapeSpeed, nearDepth, recentTrades
   } = useOrderBook(symbol);
 
   const prevPriceRef = React.useRef(currentPrice);
@@ -99,7 +101,7 @@ function App() {
           <div className="loading-screen">
             <div className="loader"></div>
             <h2>Conectando al mercado...</h2>
-            <p>Estableciendo enlace seguro con Binance Futures para {symbol}</p>
+            <p>Estableciendo enlace seguro con Binance Spot para {symbol}</p>
           </div>
         ) : (
           <>
@@ -111,6 +113,9 @@ function App() {
                 supportPrice={supportPrice}
                 resistancePrice={resistancePrice}
                 momentum={momentum}
+                cvdHistory={cvdHistory}
+                tapeSpeed={tapeSpeed}
+                nearDepth={nearDepth}
               />
               <NotificationHistory history={history} />
             </div>
@@ -129,6 +134,7 @@ function App() {
                 <button className="btn-trade btn-buy">Buy Long</button>
                 <button className="btn-trade btn-sell">Sell Short</button>
               </div>
+              <RecentTrades trades={recentTrades} />
             </div>
           </>
         )}

@@ -69,6 +69,21 @@
   border-radius: 8px;
   background-color: rgba(255,255,255,0.02);
   border-left: 3px solid transparent;
+  animation: history-slide-in 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+  transition: all 0.3s ease;
+}
+
+@keyframes history-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    background-color: rgba(255,255,255,0.02);
+  }
 }
 
 .history-time {
@@ -97,13 +112,40 @@
   color: var(--text-secondary);
 }
 
-/* History Severities */
+/* History Severities & Types */
 .history-high {
   border-left-color: var(--color-highlight);
-  background: linear-gradient(90deg, rgba(252,213,53,0.05) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(252,213,53,0.04) 0%, transparent 100%);
 }
 
 .history-critical {
   border-left-color: var(--color-sell);
-  background: linear-gradient(90deg, rgba(246,70,93,0.05) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(246,70,93,0.04) 0%, transparent 100%);
+}
+
+/* Specific glows for Buys / Sells */
+.side-buy.type-whale {
+  border-left-color: var(--color-buy) !important;
+  background: linear-gradient(90deg, rgba(14,203,129,0.08) 0%, transparent 100%) !important;
+  box-shadow: 0 0 12px rgba(14,203,129,0.1);
+  animation: history-slide-in 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) both, pulse-buy-whale 2s infinite;
+}
+
+.side-sell.type-whale {
+  border-left-color: var(--color-sell) !important;
+  background: linear-gradient(90deg, rgba(246,70,93,0.08) 0%, transparent 100%) !important;
+  box-shadow: 0 0 12px rgba(246,70,93,0.1);
+  animation: history-slide-in 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) both, pulse-sell-whale 2s infinite;
+}
+
+@keyframes pulse-buy-whale {
+  0% { box-shadow: 0 0 0 0 rgba(14,203,129, 0.3); }
+  70% { box-shadow: 0 0 0 6px rgba(14,203,129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(14,203,129, 0); }
+}
+
+@keyframes pulse-sell-whale {
+  0% { box-shadow: 0 0 0 0 rgba(246,70,93, 0.3); }
+  70% { box-shadow: 0 0 0 6px rgba(246,70,93, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(246,70,93, 0); }
 }
