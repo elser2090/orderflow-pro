@@ -1,0 +1,109 @@
+.history-panel {
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-top: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+
+.history-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.history-count {
+  background-color: var(--bg-hover);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.history-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 8px;
+}
+
+/* Custom Scrollbar for history */
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+.history-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.history-list::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 10px;
+}
+
+.history-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 24px 0;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: rgba(255,255,255,0.02);
+  border-left: 3px solid transparent;
+}
+
+.history-time {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-width: 65px;
+}
+
+.history-icon {
+  font-size: 18px;
+}
+
+.history-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-content strong {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.history-content span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* History Severities */
+.history-high {
+  border-left-color: var(--color-highlight);
+  background: linear-gradient(90deg, rgba(252,213,53,0.05) 0%, transparent 100%);
+}
+
+.history-critical {
+  border-left-color: var(--color-sell);
+  background: linear-gradient(90deg, rgba(246,70,93,0.05) 0%, transparent 100%);
+}

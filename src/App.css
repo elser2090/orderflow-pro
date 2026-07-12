@@ -149,8 +149,8 @@
 
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  gap: 24px;
 }
 
 /* Trade Actions matching Binance buttons */
@@ -188,10 +188,43 @@
   background-color: var(--color-sell);
 }
 
+@media (max-width: 1200px) {
+  .main-content {
+    grid-template-columns: 1fr 1fr;
+  }
+  .middle-column {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 900px) {
   .main-content {
     grid-template-columns: 1fr;
   }
+}
+
+/* Big Price Header */
+.center-header {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.big-price {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-buy);
+  letter-spacing: -1px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.price-currency {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: normal;
 }
 
 /* Loading Screen */

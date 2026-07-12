@@ -1,25 +1,44 @@
 import { useState, useEffect, useRef } from 'react';
 
 export function useOrderBook(symbol = 'BTCUSDT') {
+  // Estados para UI
   const [data, setData] = useState({ bids: [], asks: [] });
   const [stats, setStats] = useState({ buyPressure: 50, sellPressure: 50 });
   const [insights, setInsights] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [currentPrice, setCurrentPrice] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   
+  // Referencias para optimización y lógica interna
   const previousWallsRef = useRef({ bidWall: null, askWall: null });
   const activeAlertsRef = useRef([]);
+  const latestDataRef = useRef(null);
 
   useEffect(() => {
     let ws = null;
-    let mockInterval = null;
+    let uiUpdateInterval = null;
 
     // Reset state on symbol change
     setData({ bids: [], asks: [] });
     setStats({ buyPressure: 50, sellPressure: 50 });
     setInsights([]);
+    setHistory([]);
+    setCurrentPrice(0);
     setIsConnected(false);
     activeAlertsRef.current = [];
     previousWallsRef.current = { bidWall: null, askWall: null };
+    latestDataRef.current = null;
+
+    // Bucle de actualización visual optimizado (4 veces por segundo)
+    uiUpdateInterval = setInterval(() => {
+      if (latestDataRef.current) {
+        const { newData, newStats, newInsights, newPrice } = latestDataRef.current;
+        setData(newData);
+        setStats(newStats);
+        setInsights(newInsights);
+        setCurrentPrice(newPrice);
+      }
+    }, 250);
 
     const processData = (responseBids, responseAsks) => {
       let tBid = 0;
@@ -69,25 +88,33 @@ export function useOrderBook(symbol = 'BTCUSDT') {
           newAsks[i].total = tAsk.toFixed(3);
       }
 
-      setData({ bids: newBids, asks: newAsks });
+      // Calcular precio en vivo (punto medio del spread)
+      const bestBid = parseFloat(responseBids[0][0]);
+      const bestAsk = parseFloat(responseAsks[0][0]);
+      const livePrice = (bestBid + bestAsk) / 2;
 
+      // Estadísticas
       const totalVolume = tBid + tAsk;
       const buyPressureNum = totalVolume > 0 ? (tBid / totalVolume) * 100 : 50;
       const sellPressureNum = totalVolume > 0 ? (tAsk / totalVolume) * 100 : 50;
 
-      setStats({
+      const newStats = {
         buyPressure: buyPressureNum.toFixed(2),
         sellPressure: sellPressureNum.toFixed(2)
-      });
+      };
 
+      // ALGORITMOS DE INSIGHTS
       const currentInsights = [];
+      const newHistoryEvents = [];
       const avgBidAmount = tBid / 20;
       const avgAskAmount = tAsk / 20;
+      const now = Date.now();
+      const timeStr = new Date(now).toLocaleTimeString();
 
       if (buyPressureNum > 65) {
-        currentInsights.push({ id: 'imbalance', type: 'BUY_IMBALANCE', icon: '⚖️', title: 'Desequilibrio de Compras', message: `Fuerte presión compradora (${buyPressureNum.toFixed(1)}%). Posible subida.`, severity: 'medium' });
+        currentInsights.push({ id: 'imbalance', type: 'BUY_IMBALANCE', icon: '⚖️', title: 'Desequilibrio de Compras', message: `Presión (${buyPressureNum.toFixed(1)}%)`, severity: 'medium' });
       } else if (sellPressureNum > 65) {
-        currentInsights.push({ id: 'imbalance', type: 'SELL_IMBALANCE', icon: '⚖️', title: 'Desequilibrio de Ventas', message: `Fuerte presión vendedora (${sellPressureNum.toFixed(1)}%). Posible caída.`, severity: 'medium' });
+        currentInsights.push({ id: 'imbalance', type: 'SELL_IMBALANCE', icon: '⚖️', title: 'Desequilibrio de Ventas', message: `Presión (${sellPressureNum.toFixed(1)}%)`, severity: 'medium' });
       }
 
       let currentBidWall = null;
@@ -95,88 +122,83 @@ export function useOrderBook(symbol = 'BTCUSDT') {
 
       if (maxBidAmount > avgBidAmount * 3.5 && maxBidAmount > 5) {
         currentBidWall = { price: bidWallPrice, amount: maxBidAmount };
-        currentInsights.push({ id: 'bid_wall', type: 'BUY_WALL', icon: '🛡️', title: 'Fuerte Barrera de Compra', message: `Muro detectado en ${bidWallPrice.toFixed(2)} con ${maxBidAmount.toFixed(1)} vol.`, severity: 'high' });
+        currentInsights.push({ id: 'bid_wall', type: 'BUY_WALL', icon: '🛡️', title: 'Muro de Compra', message: `En ${bidWallPrice.toFixed(2)} vol: ${maxBidAmount.toFixed(1)}`, severity: 'high' });
       }
 
       if (maxAskAmount > avgAskAmount * 3.5 && maxAskAmount > 5) {
         currentAskWall = { price: askWallPrice, amount: maxAskAmount };
-        currentInsights.push({ id: 'ask_wall', type: 'SELL_WALL', icon: '🧱', title: 'Fuerte Barrera de Venta', message: `Muro detectado en ${askWallPrice.toFixed(2)} con ${maxAskAmount.toFixed(1)} vol.`, severity: 'high' });
+        currentInsights.push({ id: 'ask_wall', type: 'SELL_WALL', icon: '🧱', title: 'Muro de Venta', message: `En ${askWallPrice.toFixed(2)} vol: ${maxAskAmount.toFixed(1)}`, severity: 'high' });
       }
 
+      // Detección de Spoofing (Órdenes Fantasma)
       const prevWalls = previousWallsRef.current;
-      const now = Date.now();
       
       if (prevWalls.bidWall && !currentBidWall) {
-        const currentPrice = responseBids[0] ? parseFloat(responseBids[0][0]) : 0;
-        if (currentPrice > prevWalls.bidWall.price + (currentPrice * 0.0005)) {
-           activeAlertsRef.current.push({ id: `spoof_${now}`, type: 'SPOOFING', icon: '👻', title: 'Spoofing Detectado (Compras)', message: `Muro falso retirado abruptamente en ${prevWalls.bidWall.price.toFixed(2)}.`, severity: 'critical', expires: now + 3000 });
+        if (livePrice > prevWalls.bidWall.price + (livePrice * 0.0005)) {
+           const alert = { id: `spoof_${now}`, type: 'SPOOFING', icon: '👻', title: 'Spoofing Compras', message: `Muro falso cancelado en ${prevWalls.bidWall.price.toFixed(2)}`, severity: 'critical', expires: now + 3000 };
+           activeAlertsRef.current.push(alert);
+           newHistoryEvents.push({ ...alert, time: timeStr });
         }
       }
 
       if (prevWalls.askWall && !currentAskWall) {
-        const currentPrice = responseAsks[0] ? parseFloat(responseAsks[0][0]) : 0;
-        if (currentPrice > 0 && currentPrice < prevWalls.askWall.price - (currentPrice * 0.0005)) {
-           activeAlertsRef.current.push({ id: `spoof_${now}`, type: 'SPOOFING', icon: '👻', title: 'Spoofing Detectado (Ventas)', message: `Muro falso retirado abruptamente en ${prevWalls.askWall.price.toFixed(2)}.`, severity: 'critical', expires: now + 3000 });
+        if (livePrice > 0 && livePrice < prevWalls.askWall.price - (livePrice * 0.0005)) {
+           const alert = { id: `spoof_${now}`, type: 'SPOOFING', icon: '👻', title: 'Spoofing Ventas', message: `Muro falso cancelado en ${prevWalls.askWall.price.toFixed(2)}`, severity: 'critical', expires: now + 3000 };
+           activeAlertsRef.current.push(alert);
+           newHistoryEvents.push({ ...alert, time: timeStr });
         }
+      }
+
+      // Agregar a historial si hay nuevos spoofings o si apareció un muro gigante nuevo (para no inundar, solo muros nuevos)
+      if (currentBidWall && (!prevWalls.bidWall || prevWalls.bidWall.price !== currentBidWall.price)) {
+         newHistoryEvents.push({ id: `wall_${now}`, type: 'BUY_WALL', icon: '🛡️', title: 'Nuevo Muro de Compra', message: `${maxBidAmount.toFixed(1)} USDT en ${bidWallPrice.toFixed(2)}`, severity: 'high', time: timeStr });
+      }
+      if (currentAskWall && (!prevWalls.askWall || prevWalls.askWall.price !== currentAskWall.price)) {
+         newHistoryEvents.push({ id: `wall_${now}`, type: 'SELL_WALL', icon: '🧱', title: 'Nuevo Muro de Venta', message: `${maxAskAmount.toFixed(1)} USDT en ${askWallPrice.toFixed(2)}`, severity: 'high', time: timeStr });
+      }
+
+      if (newHistoryEvents.length > 0) {
+        setHistory(prev => [...newHistoryEvents, ...prev].slice(0, 50)); // Mantener máximo 50 eventos
       }
 
       previousWallsRef.current = { bidWall: currentBidWall, askWall: currentAskWall };
       activeAlertsRef.current = activeAlertsRef.current.filter(alert => alert.expires > now);
-      setInsights([...currentInsights, ...activeAlertsRef.current]);
+      
+      const newInsightsList = [...currentInsights, ...activeAlertsRef.current];
+
+      // Guardar en la referencia para el próximo tic visual
+      latestDataRef.current = {
+        newData: { bids: newBids, asks: newAsks },
+        newStats,
+        newInsights: newInsightsList,
+        newPrice: livePrice
+      };
     };
 
-    if (symbol === 'SPCXUSDT') {
-      // Mock Data Generator for SPCXUSDT
+    // Conexión Real a Binance WebSocket
+    ws = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@depth20@100ms`);
+
+    ws.onopen = () => {
+      console.log(`Conectado al stream de datos reales de Binance para ${symbol}`);
       setIsConnected(true);
-      let basePrice = 145.75;
-      mockInterval = setInterval(() => {
-        // Randomly move base price slightly
-        basePrice = basePrice + (Math.random() - 0.5) * 0.1;
-        
-        const mockBids = [];
-        const mockAsks = [];
-        
-        // Randomly simulate a whale wall occasionally
-        const whaleIndex = Math.random() > 0.8 ? Math.floor(Math.random() * 5) + 5 : -1;
-        
-        for (let i = 0; i < 20; i++) {
-          const bidPrice = basePrice - (i * 0.05) - 0.01;
-          const bidAmount = i === whaleIndex ? Math.random() * 50 + 20 : Math.random() * 5 + 0.5;
-          mockBids.push([bidPrice.toFixed(4), bidAmount.toFixed(3)]);
-          
-          const askPrice = basePrice + (i * 0.05) + 0.01;
-          const askAmount = i === (whaleIndex === -1 && Math.random() > 0.8 ? Math.floor(Math.random() * 5) + 5 : -1) ? Math.random() * 50 + 20 : Math.random() * 5 + 0.5;
-          mockAsks.push([askPrice.toFixed(4), askAmount.toFixed(3)]);
-        }
-        processData(mockBids, mockAsks);
-      }, 100);
-      
-    } else {
-      // Real Binance WebSocket
-      ws = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@depth20@100ms`);
+    };
 
-      ws.onopen = () => {
-        console.log(`Conectado al stream de datos reales de Binance para ${symbol}`);
-        setIsConnected(true);
-      };
+    ws.onmessage = (event) => {
+      const response = JSON.parse(event.data);
+      if (response.b && response.a && response.b.length > 0 && response.a.length > 0) {
+        processData(response.b, response.a);
+      }
+    };
 
-      ws.onmessage = (event) => {
-        const response = JSON.parse(event.data);
-        if (response.b && response.a) {
-          processData(response.b, response.a);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('Error en WebSocket de Binance:', error);
-      };
-    }
+    ws.onerror = (error) => {
+      console.error('Error en WebSocket de Binance:', error);
+    };
 
     return () => {
       if (ws) ws.close();
-      if (mockInterval) clearInterval(mockInterval);
+      if (uiUpdateInterval) clearInterval(uiUpdateInterval);
     };
   }, [symbol]);
 
-  return { data, stats, insights, isConnected };
+  return { data, stats, insights, history, currentPrice, isConnected };
 }

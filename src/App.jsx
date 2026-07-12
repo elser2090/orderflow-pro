@@ -3,6 +3,7 @@ import { useOrderBook } from './hooks/useOrderBook';
 import OrderBook from './components/OrderBook';
 import DepthChart from './components/DepthChart';
 import AnalysisPanel from './components/AnalysisPanel';
+import NotificationHistory from './components/NotificationHistory';
 import './App.css';
 
 const ASSETS = [
@@ -11,7 +12,7 @@ const ASSETS = [
   { id: 'BNBUSDT', name: 'Binance Coin', icon: '🟡' },
   { id: 'SOLUSDT', name: 'Solana', icon: '◎' },
   { id: 'ZECUSDT', name: 'Zcash', icon: 'ⓩ' },
-  { id: 'SPCXUSDT', name: 'SPCX (Simulado)', icon: '🧪' }
+  { id: 'SPCXUSDT', name: 'SPCX', icon: '🚀' }
 ];
 
 function App() {
@@ -20,7 +21,16 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const { data, stats, insights, isConnected } = useOrderBook(symbol);
+  const { data, stats, insights, history, currentPrice, isConnected } = useOrderBook(symbol);
+
+  const prevPriceRef = React.useRef(currentPrice);
+  const [priceColor, setPriceColor] = useState('var(--color-buy)');
+
+  React.useEffect(() => {
+    if (currentPrice > prevPriceRef.current) setPriceColor('var(--color-buy)');
+    else if (currentPrice < prevPriceRef.current) setPriceColor('var(--color-sell)');
+    prevPriceRef.current = currentPrice;
+  }, [currentPrice]);
 
   const selectedAsset = ASSETS.find(a => a.id === symbol);
 
@@ -32,6 +42,15 @@ function App() {
           <h1>OrderFlow Pro</h1>
         </div>
         
+        <div className="center-header">
+          {isConnected && currentPrice > 0 && (
+             <div className="big-price" style={{ color: priceColor }}>
+               {currentPrice < 1 ? currentPrice.toFixed(4) : currentPrice.toFixed(2)}
+               <span className="price-currency">USDT</span>
+             </div>
+          )}
+        </div>
+
         <div className="asset-selector-container">
           <button 
             className="asset-dropdown-btn" 
@@ -83,9 +102,13 @@ function App() {
           <>
             <div className="left-column">
               <AnalysisPanel stats={stats} symbol={symbol} insights={insights} />
-              <DepthChart data={data} />
+              <NotificationHistory history={history} />
             </div>
             
+            <div className="middle-column">
+               <DepthChart data={data} />
+            </div>
+
             <div className="right-column">
               <OrderBook data={data} />
               <div className="trade-actions">
