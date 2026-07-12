@@ -31,7 +31,7 @@ export default function OrderBook({ data }) {
                   className="ob-depth-bar bid-bar" 
                   style={{ width: `${depthPercentage}%` }} 
                 />
-                <span className="ob-val text-primary">{bid.total}</span>
+                <span className="ob-val text-primary vol-col">{bid.total}</span>
                 <span className="ob-val text-buy price-col">{bid.price}</span>
               </div>
             );
@@ -48,7 +48,7 @@ export default function OrderBook({ data }) {
                   style={{ width: `${depthPercentage}%` }} 
                 />
                 <span className="ob-val text-sell price-col">{ask.price}</span>
-                <span className="ob-val text-primary right">{ask.total}</span>
+                <span className="ob-val text-primary right vol-col">{ask.total}</span>
               </div>
             );
           })}

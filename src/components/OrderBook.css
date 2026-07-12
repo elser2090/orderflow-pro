@@ -47,15 +47,37 @@
 }
 
 .ob-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   padding: 4px 0;
   position: relative;
   cursor: pointer;
-  font-family: 'JetBrains Mono', 'Courier New', monospace; /* Monospace for numbers */
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 13px;
   transition: background-color 0.2s ease;
   z-index: 1;
+}
+
+.bids-side .ob-row {
+  grid-template-columns: 1fr 1fr;
+}
+.bids-side .ob-row .price-col {
+  text-align: right;
+  padding-right: 8px;
+}
+.bids-side .ob-row .vol-col {
+  text-align: left;
+}
+
+.asks-side .ob-row {
+  grid-template-columns: 1fr 1fr;
+}
+.asks-side .ob-row .price-col {
+  text-align: left;
+  padding-left: 8px;
+}
+.asks-side .ob-row .vol-col {
+  text-align: right;
 }
 
 .ob-row:hover {

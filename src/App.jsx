@@ -12,7 +12,7 @@ const ASSETS = [
   { id: 'BNBUSDT', name: 'Binance Coin', icon: '🟡' },
   { id: 'SOLUSDT', name: 'Solana', icon: '◎' },
   { id: 'ZECUSDT', name: 'Zcash', icon: 'ⓩ' },
-  { id: 'SPCXUSDT', name: 'SPCX', icon: '🚀' }
+  { id: 'SPCXBUSDT', name: 'SPACEX', icon: '🚀' }
 ];
 
 function App() {
@@ -151,7 +151,7 @@ function App() {
                 <label>Servidor de Datos</label>
                 <div className="server-info">
                   <span className="server-dot"></span>
-                  wss://fstream.binance.com
+                  wss://stream.binance.com:9443
                 </div>
               </div>
             </div>

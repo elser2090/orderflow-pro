@@ -1,44 +1,66 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import './DepthChart.css';
 
 export default function DepthChart({ data }) {
   const { bids, asks } = data;
   
-  if (!bids.length || !asks.length) return null;
+  // Use useMemo to avoid recalculating heavy SVG paths on every render unnecessarily
+  const { bidPath, askPath, bidLine, askLine } = useMemo(() => {
+    if (!bids || !asks || !bids.length || !asks.length) {
+      return { bidPath: '', askPath: '', bidLine: '', askLine: '' };
+    }
 
-  // We map the cumulative totals to SVG points
-  const maxBidTotal = parseFloat(bids[bids.length - 1].total);
-  const maxAskTotal = parseFloat(asks[0].total);
-  const maxTotal = Math.max(maxBidTotal, maxAskTotal) * 1.1; // 10% padding
+    const width = 800;
+    const height = 250;
+    const halfWidth = width / 2;
 
-  const width = 800;
-  const height = 200;
-  const halfWidth = width / 2;
+    const maxBidTotal = parseFloat(bids[bids.length - 1].total) || 0;
+    const maxAskTotal = parseFloat(asks[0].total) || 0;
+    const maxTotal = Math.max(maxBidTotal, maxAskTotal) * 1.05; // 5% padding
+    
+    // Si maxTotal es 0 (datos vacíos temporalmente), evitar NaN
+    if (maxTotal === 0) return { bidPath: '', askPath: '', bidLine: '', askLine: '' };
 
-  // Bids mapping (Left side, from center to left)
-  // We want the highest price (center) to have the lowest total, extending left to highest total
-  const bidPoints = bids.map((bid, i) => {
-    // Reverse the visual layout: i=0 is highest bid price (closest to center)
-    const x = halfWidth - (i / bids.length) * halfWidth; 
-    const y = height - (parseFloat(bid.total) / maxTotal) * height;
-    return `${x},${y}`;
-  });
-  
-  const bidPath = `M ${halfWidth},${height} ` + 
-                  bidPoints.join(' ') + 
-                  ` L 0,${height} Z`;
+    // Bids (Mitad izquierda)
+    const bidPoints = bids.map((bid, i) => {
+      const x = halfWidth - (i / (bids.length - 1)) * halfWidth; 
+      const y = height - (parseFloat(bid.total) / maxTotal) * height;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+    
+    const bidPathStr = `M ${halfWidth},${height} ` + 
+                       bidPoints.join(' L ') + 
+                       ` L 0,${height} Z`;
 
-  // Asks mapping (Right side, from center to right)
-  // asks[asks.length-1] is the lowest ask price (closest to center)
-  const askPoints = [...asks].reverse().map((ask, i) => {
-    const x = halfWidth + (i / asks.length) * halfWidth;
-    const y = height - (parseFloat(ask.total) / maxTotal) * height;
-    return `${x},${y}`;
-  });
+    const bidLineStr = `M ${halfWidth},${height} L ` + bidPoints.join(' L ');
 
-  const askPath = `M ${halfWidth},${height} ` + 
-                  askPoints.join(' ') + 
-                  ` L ${width},${height} Z`;
+    // Asks (Mitad derecha)
+    const reversedAsks = [...asks].reverse();
+    const askPoints = reversedAsks.map((ask, i) => {
+      const x = halfWidth + (i / (reversedAsks.length - 1)) * halfWidth;
+      const y = height - (parseFloat(ask.total) / maxTotal) * height;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+
+    const askPathStr = `M ${halfWidth},${height} ` + 
+                       askPoints.join(' L ') + 
+                       ` L ${width},${height} Z`;
+
+    const askLineStr = `M ${halfWidth},${height} L ` + askPoints.join(' L ');
+
+    return { bidPath: bidPathStr, askPath: askPathStr, bidLine: bidLineStr, askLine: askLineStr };
+  }, [bids, asks]);
+
+  if (!bidPath) return (
+     <div className="depth-chart-container">
+       <div className="depth-header">
+         <h3>Market Depth</h3>
+       </div>
+       <div className="svg-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+         Procesando datos del libro...
+       </div>
+     </div>
+  );
 
   return (
     <div className="depth-chart-container">
@@ -46,32 +68,33 @@ export default function DepthChart({ data }) {
         <h3>Market Depth</h3>
       </div>
       <div className="svg-wrapper">
-        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="bidGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(14, 203, 129, 0.4)" />
-              <stop offset="100%" stopColor="rgba(14, 203, 129, 0.05)" />
-            </linearGradient>
-            <linearGradient id="askGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(246, 70, 93, 0.4)" />
-              <stop offset="100%" stopColor="rgba(246, 70, 93, 0.05)" />
-            </linearGradient>
-          </defs>
-          
-          <polygon 
-            points={bidPath} 
-            fill="url(#bidGrad)" 
-            stroke="var(--color-buy)" 
+        <svg viewBox="0 0 800 250" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+          {/* Bid Area */}
+          <path 
+            d={bidPath} 
+            fill="rgba(14, 203, 129, 0.15)" 
+          />
+          {/* Bid Line */}
+          <path
+            d={bidLine}
+            fill="none"
+            stroke="var(--color-buy)"
             strokeWidth="2"
-            className="depth-polygon"
+            vectorEffect="non-scaling-stroke"
           />
           
-          <polygon 
-            points={askPath} 
-            fill="url(#askGrad)" 
-            stroke="var(--color-sell)" 
+          {/* Ask Area */}
+          <path 
+            d={askPath} 
+            fill="rgba(246, 70, 93, 0.15)" 
+          />
+          {/* Ask Line */}
+          <path
+            d={askLine}
+            fill="none"
+            stroke="var(--color-sell)"
             strokeWidth="2"
-            className="depth-polygon"
+            vectorEffect="non-scaling-stroke"
           />
         </svg>
       </div>

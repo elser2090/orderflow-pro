@@ -175,8 +175,8 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       };
     };
 
-    // Conexión Real a Binance WebSocket
-    ws = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@depth20@100ms`);
+    // Conexión Real a Binance WebSocket (SPOT)
+    ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@depth20@100ms`);
 
     ws.onopen = () => {
       console.log(`Conectado al stream de datos reales de Binance para ${symbol}`);
