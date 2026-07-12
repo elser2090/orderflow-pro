@@ -21,7 +21,10 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const { data, stats, insights, history, currentPrice, isConnected } = useOrderBook(symbol);
+  const { 
+    data, stats, insights, history, currentPrice, isConnected, 
+    supportPrice, resistancePrice, momentum 
+  } = useOrderBook(symbol);
 
   const prevPriceRef = React.useRef(currentPrice);
   const [priceColor, setPriceColor] = useState('var(--color-buy)');
@@ -101,7 +104,14 @@ function App() {
         ) : (
           <>
             <div className="left-column">
-              <AnalysisPanel stats={stats} symbol={symbol} insights={insights} />
+              <AnalysisPanel 
+                stats={stats} 
+                symbol={symbol} 
+                insights={insights} 
+                supportPrice={supportPrice}
+                resistancePrice={resistancePrice}
+                momentum={momentum}
+              />
               <NotificationHistory history={history} />
             </div>
             
@@ -110,7 +120,11 @@ function App() {
             </div>
 
             <div className="right-column">
-              <OrderBook data={data} />
+              <OrderBook 
+                data={data} 
+                supportPrice={supportPrice}
+                resistancePrice={resistancePrice}
+              />
               <div className="trade-actions">
                 <button className="btn-trade btn-buy">Buy Long</button>
                 <button className="btn-trade btn-sell">Sell Short</button>

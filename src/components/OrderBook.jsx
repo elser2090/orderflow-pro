@@ -1,7 +1,7 @@
 import React from 'react';
 import './OrderBook.css';
 
-export default function OrderBook({ data }) {
+export default function OrderBook({ data, supportPrice, resistancePrice }) {
   const { bids, asks } = data;
 
   // Find max total volume for scaling the depth bars
@@ -21,12 +21,13 @@ export default function OrderBook({ data }) {
       </div>
 
       <div className="ob-body">
-        {/* Asks (Ventas) - Shown in red, typically upper half but in Binance mobile they are right side or top. In the screenshot, bids are left, asks are right. */}
+        {/* Asks (Ventas) */}
         <div className="ob-side bids-side">
           {bids.map((bid, index) => {
             const depthPercentage = (parseFloat(bid.total) / maxVolume) * 100;
+            const isSupport = supportPrice && bid.price === supportPrice;
             return (
-              <div key={`bid-${index}`} className="ob-row">
+              <div key={`bid-${index}`} className={`ob-row ${isSupport ? 'support-detected' : ''}`}>
                 <div 
                   className="ob-depth-bar bid-bar" 
                   style={{ width: `${depthPercentage}%` }} 
@@ -41,8 +42,9 @@ export default function OrderBook({ data }) {
         <div className="ob-side asks-side">
           {asks.map((ask, index) => {
             const depthPercentage = (parseFloat(ask.total) / maxVolume) * 100;
+            const isResistance = resistancePrice && ask.price === resistancePrice;
             return (
-              <div key={`ask-${index}`} className="ob-row">
+              <div key={`ask-${index}`} className={`ob-row ${isResistance ? 'resistance-detected' : ''}`}>
                 <div 
                   className="ob-depth-bar ask-bar" 
                   style={{ width: `${depthPercentage}%` }} 

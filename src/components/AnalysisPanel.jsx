@@ -1,7 +1,7 @@
 import React from 'react';
 import './AnalysisPanel.css';
 
-export default function AnalysisPanel({ stats, symbol, insights = [] }) {
+export default function AnalysisPanel({ stats, symbol, insights = [], supportPrice, resistancePrice, momentum = 50 }) {
   const { buyPressure, sellPressure } = stats;
   
   return (
@@ -18,6 +18,9 @@ export default function AnalysisPanel({ stats, symbol, insights = [] }) {
       </div>
       
       <div className="pressure-container">
+        <div className="metrics-label-row">
+          <span>Presión Limit (Order Book)</span>
+        </div>
         <div className="pressure-labels">
           <span className="text-buy">{buyPressure}%</span>
           <span className="text-sell">{sellPressure}%</span>
@@ -27,6 +30,32 @@ export default function AnalysisPanel({ stats, symbol, insights = [] }) {
             className="pressure-bar-fill" 
             style={{ width: `${buyPressure}%` }}
           />
+        </div>
+      </div>
+
+      <div className="momentum-container">
+        <div className="metrics-label-row">
+          <span>Aceleración Momentum (Market Trades)</span>
+        </div>
+        <div className="momentum-bar-bg">
+          <div 
+            className="momentum-bar-fill" 
+            style={{ 
+              width: `${momentum}%`,
+              background: momentum > 55 ? 'var(--color-buy)' : momentum < 45 ? 'var(--color-sell)' : 'var(--text-secondary)'
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="key-levels-container">
+        <div className="level-box support-box">
+          <span className="level-title">Soporte Fuerte</span>
+          <span className="level-price text-buy">{supportPrice || 'Escaneando...'}</span>
+        </div>
+        <div className="level-box resistance-box">
+          <span className="level-title">Resistencia Fuerte</span>
+          <span className="level-price text-sell">{resistancePrice || 'Escaneando...'}</span>
         </div>
       </div>
 
