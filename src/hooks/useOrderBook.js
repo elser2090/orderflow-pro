@@ -185,8 +185,10 @@ export function useOrderBook(symbol = 'BTCUSDT') {
 
     ws.onmessage = (event) => {
       const response = JSON.parse(event.data);
-      if (response.b && response.a && response.b.length > 0 && response.a.length > 0) {
-        processData(response.b, response.a);
+      const b = response.b || response.bids;
+      const a = response.a || response.asks;
+      if (b && a && b.length > 0 && a.length > 0) {
+        processData(b, a);
       }
     };
 
