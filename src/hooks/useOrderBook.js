@@ -304,7 +304,9 @@ export function useOrderBook(symbol = 'BTCUSDT') {
     wsDepth.onclose = () => setConnectionError(true);
     wsDepth.onmessage = (event) => {
       const response = JSON.parse(event.data);
-      if (response.b && response.a) processData(response.b, response.a);
+      if (response.b && response.a && response.b.length > 0 && response.a.length > 0) {
+        processData(response.b, response.a);
+      }
     };
 
     // Connection Error Timeout
