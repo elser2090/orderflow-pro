@@ -85,6 +85,27 @@
   overflow: hidden;
 }
 
+.middle-column {
+  flex: 1;
+  min-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.middle-split-row {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.split-panel {
+  flex: 1;
+  min-width: 0;
+}
+
 .dropdown-item {
   background: transparent;
   border: none;
@@ -253,6 +274,38 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.error-screen {
+  color: #ff4d4f;
+  text-align: center;
+}
+
+.error-screen h2 {
+  color: #ff4d4f;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.error-screen p {
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.btn-retry {
+  margin-top: 24px;
+  padding: 10px 24px;
+  background-color: var(--color-highlight);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-retry:hover {
+  opacity: 0.8;
 }
 
 /* Connection Status */

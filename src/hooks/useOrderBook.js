@@ -8,6 +8,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
   const [history, setHistory] = useState([]);
   const [currentPrice, setCurrentPrice] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   
   // Estados profesionales
   const [supportPrice, setSupportPrice] = useState(null);
@@ -56,6 +57,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
     setHistory([]);
     setCurrentPrice(0);
     setIsConnected(false);
+    setConnectionError(false);
     setSupportPrice(null);
     setResistancePrice(null);
     setMomentum(50);
@@ -294,11 +296,23 @@ export function useOrderBook(symbol = 'BTCUSDT') {
 
     // WebSocket Spot Depth
     wsDepth = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@depth20@100ms`);
-    wsDepth.onopen = () => setIsConnected(true);
+    wsDepth.onopen = () => {
+      setIsConnected(true);
+      setConnectionError(false);
+    };
+    wsDepth.onerror = () => setConnectionError(true);
+    wsDepth.onclose = () => setConnectionError(true);
     wsDepth.onmessage = (event) => {
       const response = JSON.parse(event.data);
       if (response.b && response.a) processData(response.b, response.a);
     };
+
+    // Connection Error Timeout
+    const connectionTimeout = setTimeout(() => {
+      if (!latestDataRef.current && !isConnected) {
+        setConnectionError(true);
+      }
+    }, 4000);
 
     // WebSocket Spot Trades
     wsTrade = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@aggTrade`);
@@ -344,6 +358,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
     };
 
     return () => {
+      clearTimeout(connectionTimeout);
       if (wsDepth) wsDepth.close();
       if (wsTrade) wsTrade.close();
       if (wsLiq) wsLiq.close();
@@ -352,7 +367,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
   }, [symbol]);
 
   return { 
-    data, stats, insights, history, currentPrice, isConnected, 
+    data, stats, insights, history, currentPrice, isConnected, connectionError,
     supportPrice, resistancePrice, momentum,
     cvdHistory, tapeSpeed, nearDepth, recentTrades,
     liquidations, volumeProfile, whaleTrades

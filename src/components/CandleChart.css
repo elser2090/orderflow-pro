@@ -1,0 +1,67 @@
+.candle-chart-panel {
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.candle-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+
+.candle-title h3 {
+  font-size: 16px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.timeframe-selector {
+  display: flex;
+  gap: 8px;
+  background-color: rgba(0,0,0,0.2);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.tf-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tf-btn:hover {
+  color: white;
+  background-color: rgba(255,255,255,0.05);
+}
+
+.tf-btn.active {
+  background-color: var(--color-highlight);
+  color: #000;
+}
+
+.candle-container {
+  width: 100%;
+  position: relative;
+}
+
+/* Ocultar el logo de TradingView por si aparece (lightweight charts a veces lo incluye) */
+.tv-lightweight-charts-watermark {
+  display: none !important;
+}

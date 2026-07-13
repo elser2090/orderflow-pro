@@ -8,15 +8,16 @@ import RecentTrades from './components/RecentTrades';
 import WhaleBubbleChart from './components/WhaleBubbleChart';
 import VolumeProfile from './components/VolumeProfile';
 import LiquidationFeed from './components/LiquidationFeed';
+import CandleChart from './components/CandleChart';
 import './App.css';
 
+// Removido SPCXBUSDT porque causaba error de WebSocket (moneda no listada en Binance)
 const ASSETS = [
   { id: 'BTCUSDT', name: 'Bitcoin', icon: '₿' },
   { id: 'ETHUSDT', name: 'Ethereum', icon: 'Ξ' },
   { id: 'BNBUSDT', name: 'Binance Coin', icon: '🟡' },
   { id: 'SOLUSDT', name: 'Solana', icon: '◎' },
-  { id: 'ZECUSDT', name: 'Zcash', icon: 'ⓩ' },
-  { id: 'SPCXBUSDT', name: 'SPACEX', icon: '🚀' }
+  { id: 'ZECUSDT', name: 'Zcash', icon: 'ⓩ' }
 ];
 
 function App() {
@@ -26,7 +27,7 @@ function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const { 
-    data, stats, insights, history, currentPrice, isConnected, 
+    data, stats, insights, history, currentPrice, isConnected, connectionError,
     supportPrice, resistancePrice, momentum,
     cvdHistory, tapeSpeed, nearDepth, recentTrades,
     liquidations, volumeProfile, whaleTrades
@@ -65,8 +66,8 @@ function App() {
             className="asset-dropdown-btn" 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
-            <span className="asset-icon">{selectedAsset?.icon}</span>
-            <span className="asset-name">{selectedAsset?.id}</span>
+            <span className="asset-icon">{selectedAsset?.icon || '❓'}</span>
+            <span className="asset-name">{selectedAsset?.id || symbol}</span>
             <span className="dropdown-arrow">▼</span>
           </button>
           
@@ -93,15 +94,24 @@ function App() {
         </div>
 
         <div className="header-actions">
-          <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-            {isConnected ? 'Online' : 'Conectando...'}
+          <div className={`connection-status ${isConnected ? 'connected' : connectionError ? 'error' : 'disconnected'}`}>
+            {isConnected ? 'Online' : connectionError ? 'Error (Símbolo Inválido)' : 'Conectando...'}
           </div>
           <button className="btn-icon" onClick={() => setIsSettingsOpen(true)}>⚙️</button>
         </div>
       </header>
 
       <main className="main-content">
-        {!isConnected ? (
+        {connectionError ? (
+          <div className="loading-screen error-screen">
+            <h2>⚠️ Error de Conexión</h2>
+            <p>No se pudo conectar a los servidores de Binance para el par <strong>{symbol}</strong>.</p>
+            <p>Es probable que la criptomoneda haya sido deslistada o no exista en el mercado Spot.</p>
+            <button className="btn-retry" onClick={() => setSymbol('BTCUSDT')}>
+              Volver a BTCUSDT
+            </button>
+          </div>
+        ) : !isConnected ? (
           <div className="loading-screen">
             <div className="loader"></div>
             <h2>Conectando al mercado...</h2>
@@ -128,11 +138,20 @@ function App() {
             </div>
             
             <div className="middle-column">
-               <DepthChart data={data} />
-               <WhaleBubbleChart 
-                 whaleTrades={whaleTrades} 
-                 currentPrice={currentPrice} 
-               />
+               <CandleChart symbol={symbol} />
+               
+               <div className="middle-split-row">
+                 <div className="split-panel">
+                   <DepthChart data={data} />
+                 </div>
+                 <div className="split-panel">
+                   <WhaleBubbleChart 
+                     whaleTrades={whaleTrades} 
+                     currentPrice={currentPrice} 
+                   />
+                 </div>
+               </div>
+               
                <NotificationHistory history={history} />
             </div>
 
