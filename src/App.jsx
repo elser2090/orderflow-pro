@@ -5,6 +5,9 @@ import DepthChart from './components/DepthChart';
 import AnalysisPanel from './components/AnalysisPanel';
 import NotificationHistory from './components/NotificationHistory';
 import RecentTrades from './components/RecentTrades';
+import WhaleBubbleChart from './components/WhaleBubbleChart';
+import VolumeProfile from './components/VolumeProfile';
+import LiquidationFeed from './components/LiquidationFeed';
 import './App.css';
 
 const ASSETS = [
@@ -25,7 +28,8 @@ function App() {
   const { 
     data, stats, insights, history, currentPrice, isConnected, 
     supportPrice, resistancePrice, momentum,
-    cvdHistory, tapeSpeed, nearDepth, recentTrades
+    cvdHistory, tapeSpeed, nearDepth, recentTrades,
+    liquidations, volumeProfile, whaleTrades
   } = useOrderBook(symbol);
 
   const prevPriceRef = React.useRef(currentPrice);
@@ -117,11 +121,19 @@ function App() {
                 tapeSpeed={tapeSpeed}
                 nearDepth={nearDepth}
               />
-              <NotificationHistory history={history} />
+              <VolumeProfile 
+                volumeProfile={volumeProfile} 
+                currentPrice={currentPrice} 
+              />
             </div>
             
             <div className="middle-column">
                <DepthChart data={data} />
+               <WhaleBubbleChart 
+                 whaleTrades={whaleTrades} 
+                 currentPrice={currentPrice} 
+               />
+               <NotificationHistory history={history} />
             </div>
 
             <div className="right-column">
@@ -130,10 +142,7 @@ function App() {
                 supportPrice={supportPrice}
                 resistancePrice={resistancePrice}
               />
-              <div className="trade-actions">
-                <button className="btn-trade btn-buy">Buy Long</button>
-                <button className="btn-trade btn-sell">Sell Short</button>
-              </div>
+              <LiquidationFeed liquidations={liquidations} />
               <RecentTrades trades={recentTrades} />
             </div>
           </>
@@ -145,34 +154,37 @@ function App() {
         <div className="modal-overlay" onClick={() => setIsSettingsOpen(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Configuración</h2>
+              <h2>Ajustes del Terminal</h2>
               <button className="btn-close" onClick={() => setIsSettingsOpen(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="setting-group">
-                <label>Tema Visual</label>
-                <select className="setting-select" disabled>
-                  <option>Oscuro Profesional (Activo)</option>
-                  <option>Claro (Próximamente)</option>
-                </select>
+                <label>Servidor de Datos</label>
+                <div className="server-info">
+                  <span className="server-dot"></span>
+                  Binance WebSockets (Direct)
+                </div>
               </div>
+              
               <div className="setting-group">
                 <label>Alertas de Sonido</label>
                 <label className="switch">
                   <input 
                     type="checkbox" 
                     checked={soundEnabled} 
-                    onChange={(e) => setSoundEnabled(e.target.checked)} 
+                    onChange={e => setSoundEnabled(e.target.checked)} 
                   />
                   <span className="slider round"></span>
                 </label>
               </div>
+
               <div className="setting-group">
-                <label>Servidor de Datos</label>
-                <div className="server-info">
-                  <span className="server-dot"></span>
-                  wss://stream.binance.com:9443
-                </div>
+                <label>Tolerancia de Ballenas (500%)</label>
+                <select className="setting-select" defaultValue="500">
+                  <option value="300">Alta Sensibilidad (300%)</option>
+                  <option value="500">Estándar (500%)</option>
+                  <option value="1000">Solo Megalodones (1000%)</option>
+                </select>
               </div>
             </div>
           </div>

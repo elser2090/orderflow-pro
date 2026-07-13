@@ -1,0 +1,100 @@
+.liquidation-panel {
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-top: 24px;
+  height: 250px;
+  display: flex;
+  flex-direction: column;
+}
+
+.liq-container {
+  flex: 1;
+  overflow-y: hidden;
+  position: relative;
+}
+
+.liq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.liq-row {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  animation: liq-slide 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid transparent;
+}
+
+@keyframes liq-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.liq-time {
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--text-secondary);
+  min-width: 50px;
+}
+
+.liq-info {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  align-items: center;
+}
+
+.liq-type {
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.liq-vol {
+  font-weight: bold;
+}
+
+.liq-price {
+  color: var(--text-muted);
+}
+
+.liq-long {
+  border-left-color: var(--color-sell);
+  background: linear-gradient(90deg, rgba(246,70,93,0.1) 0%, transparent 100%);
+}
+
+.liq-long .liq-type {
+  background-color: var(--color-sell);
+  color: white;
+}
+
+.liq-long .liq-vol {
+  color: var(--color-sell);
+}
+
+.liq-short {
+  border-left-color: var(--color-buy);
+  background: linear-gradient(90deg, rgba(14,203,129,0.1) 0%, transparent 100%);
+}
+
+.liq-short .liq-type {
+  background-color: var(--color-buy);
+  color: white;
+}
+
+.liq-short .liq-vol {
+  color: var(--color-buy);
+}

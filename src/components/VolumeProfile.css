@@ -1,0 +1,83 @@
+.volume-profile-panel {
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-top: 24px;
+  height: 250px;
+  display: flex;
+  flex-direction: column;
+}
+
+.vp-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.vp-container::-webkit-scrollbar {
+  width: 4px;
+}
+.vp-container::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 10px;
+}
+
+.vp-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vp-row {
+  display: flex;
+  align-items: center;
+  height: 14px;
+}
+
+.vp-price {
+  width: 60px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: right;
+  margin-right: 8px;
+}
+
+.vp-bar-wrapper {
+  flex: 1;
+  height: 100%;
+  background-color: rgba(255,255,255,0.02);
+  position: relative;
+  border-radius: 0 2px 2px 0;
+}
+
+.vp-bar-fill {
+  height: 100%;
+  background-color: rgba(100, 150, 255, 0.3);
+  transition: width 0.3s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+.vp-poc .vp-price {
+  color: var(--color-highlight);
+  font-weight: bold;
+}
+
+.vp-poc .vp-bar-fill {
+  background-color: var(--color-highlight);
+  box-shadow: 0 0 8px rgba(252, 213, 53, 0.4);
+}
+
+.poc-label {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  font-weight: bold;
+  color: #000;
+  background: var(--color-highlight);
+  padding: 0 4px;
+  border-radius: 2px;
+}

@@ -1,0 +1,66 @@
+.bubble-chart-panel {
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-top: 24px;
+  height: 250px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header-mini {
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+}
+
+.panel-header-mini h3 {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.bubble-canvas-container {
+  flex: 1;
+  position: relative;
+  background-color: rgba(255,255,255,0.01);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.bubble-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.whale-bubble {
+  animation: pop-in 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  transform-origin: center;
+  transition: all 0.3s;
+}
+
+.whale-bubble:hover {
+  fill-opacity: 0.8;
+  stroke-width: 3;
+  cursor: pointer;
+}
+
+@keyframes pop-in {
+  from {
+    r: 0;
+    opacity: 0;
+  }
+}
