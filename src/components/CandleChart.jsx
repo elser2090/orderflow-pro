@@ -72,8 +72,8 @@ export default function CandleChart({ symbol }) {
     let wsKline = null;
     let isFetchingHistory = true;
 
-    // Primero obtener historial de velas a través de API REST
-    fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=200`)
+    // Primero obtener historial de velas a través de API REST de Futuros
+    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=200`)
       .then(res => res.json())
       .then(data => {
         const historicalData = data.map(d => ({
@@ -86,8 +86,8 @@ export default function CandleChart({ symbol }) {
         candlestickSeries.current.setData(historicalData);
         isFetchingHistory = false;
 
-        // Conectar a WebSocket para actualizaciones en vivo
-        wsKline = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`);
+        // Conectar a WebSocket de Futuros para actualizaciones en vivo
+        wsKline = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@kline_${interval}`);
         wsKline.onmessage = (event) => {
           const message = JSON.parse(event.data);
           const kline = message.k;

@@ -11,13 +11,14 @@ import LiquidationFeed from './components/LiquidationFeed';
 import CandleChart from './components/CandleChart';
 import './App.css';
 
-// Removido SPCXBUSDT porque causaba error de WebSocket (moneda no listada en Binance)
+// Activos del Mercado de Futuros (Perpetuos)
 const ASSETS = [
   { id: 'BTCUSDT', name: 'Bitcoin', icon: '₿' },
   { id: 'ETHUSDT', name: 'Ethereum', icon: 'Ξ' },
   { id: 'BNBUSDT', name: 'Binance Coin', icon: '🟡' },
   { id: 'SOLUSDT', name: 'Solana', icon: '◎' },
-  { id: 'ZECUSDT', name: 'Zcash', icon: 'ⓩ' }
+  { id: 'ZECUSDT', name: 'Zcash', icon: 'ⓩ' },
+  { id: 'SPCXUSDT', name: 'SpaceX', icon: '🚀' }
 ];
 
 function App() {

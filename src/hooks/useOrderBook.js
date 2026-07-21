@@ -294,8 +294,8 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       }
     };
 
-    // WebSocket Spot Depth
-    wsDepth = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@depth20@100ms`);
+    // WebSocket Futures Depth
+    wsDepth = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@depth20@100ms`);
     wsDepth.onopen = () => {
       setIsConnected(true);
       setConnectionError(false);
@@ -318,8 +318,8 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       }
     }, 4000);
 
-    // WebSocket Spot Trades
-    wsTrade = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@aggTrade`);
+    // WebSocket Futures Trades
+    wsTrade = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@aggTrade`);
     wsTrade.onmessage = (event) => {
       const response = JSON.parse(event.data);
       if (response.e === 'aggTrade') processTrade(response);
