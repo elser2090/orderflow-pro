@@ -304,14 +304,16 @@ export function useOrderBook(symbol = 'BTCUSDT') {
     wsDepth.onclose = () => setConnectionError(true);
     wsDepth.onmessage = (event) => {
       const response = JSON.parse(event.data);
-      if (response.b && response.a && response.b.length > 0 && response.a.length > 0) {
-        processData(response.b, response.a);
+      const b = response.b || response.bids;
+      const a = response.a || response.asks;
+      if (b && a && b.length > 0 && a.length > 0) {
+        processData(b, a);
       }
     };
 
     // Connection Error Timeout
     const connectionTimeout = setTimeout(() => {
-      if (!latestDataRef.current && !isConnected) {
+      if (!latestDataRef.current && wsDepth && wsDepth.readyState !== WebSocket.OPEN) {
         setConnectionError(true);
       }
     }, 4000);
