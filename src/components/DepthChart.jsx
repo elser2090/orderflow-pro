@@ -23,7 +23,7 @@ export default function DepthChart({ data }) {
 
     // Bids (Mitad izquierda)
     const bidPoints = bids.map((bid, i) => {
-      const x = halfWidth - (i / (bids.length - 1)) * halfWidth; 
+      const x = halfWidth - (i / Math.max(bids.length - 1, 1)) * halfWidth; 
       const y = height - (parseFloat(bid.total) / maxTotal) * height;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     });
@@ -37,7 +37,7 @@ export default function DepthChart({ data }) {
     // Asks (Mitad derecha)
     const reversedAsks = [...asks].reverse();
     const askPoints = reversedAsks.map((ask, i) => {
-      const x = halfWidth + (i / (reversedAsks.length - 1)) * halfWidth;
+      const x = halfWidth + (i / Math.max(reversedAsks.length - 1, 1)) * halfWidth;
       const y = height - (parseFloat(ask.total) / maxTotal) * height;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     });

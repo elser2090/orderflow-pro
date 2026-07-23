@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useOrderBook } from './hooks/useOrderBook';
 import OrderBook from './components/OrderBook';
 import DepthChart from './components/DepthChart';
@@ -26,6 +26,7 @@ function App() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [whaleSensitivity, setWhaleSensitivity] = useState('500');
 
   const { 
     data, stats, insights, history, currentPrice, isConnected, connectionError,
@@ -34,13 +35,14 @@ function App() {
     liquidations, volumeProfile, whaleTrades
   } = useOrderBook(symbol);
 
-  const prevPriceRef = React.useRef(currentPrice);
-  const [priceColor, setPriceColor] = useState('var(--color-buy)');
-
-  React.useEffect(() => {
-    if (currentPrice > prevPriceRef.current) setPriceColor('var(--color-buy)');
-    else if (currentPrice < prevPriceRef.current) setPriceColor('var(--color-sell)');
+  // Fix #9: Derive price color without causing extra renders
+  const prevPriceRef = useRef(currentPrice);
+  const priceColor = useMemo(() => {
+    let color = 'var(--color-buy)';
+    if (currentPrice > prevPriceRef.current) color = 'var(--color-buy)';
+    else if (currentPrice < prevPriceRef.current) color = 'var(--color-sell)';
     prevPriceRef.current = currentPrice;
+    return color;
   }, [currentPrice]);
 
   const selectedAsset = ASSETS.find(a => a.id === symbol);
@@ -107,7 +109,7 @@ function App() {
           <div className="loading-screen error-screen">
             <h2>⚠️ Error de Conexión</h2>
             <p>No se pudo conectar a los servidores de Binance para el par <strong>{symbol}</strong>.</p>
-            <p>Es probable que la criptomoneda haya sido deslistada o no exista en el mercado Spot.</p>
+            <p>Es probable que la criptomoneda haya sido deslistada o no exista en el mercado de Futuros.</p>
             <button className="btn-retry" onClick={() => setSymbol('BTCUSDT')}>
               Volver a BTCUSDT
             </button>
@@ -116,7 +118,7 @@ function App() {
           <div className="loading-screen">
             <div className="loader"></div>
             <h2>Conectando al mercado...</h2>
-            <p>Estableciendo enlace seguro con Binance Spot para {symbol}</p>
+            <p>Estableciendo enlace seguro con Binance Futures para {symbol}</p>
           </div>
         ) : (
           <>
@@ -182,7 +184,7 @@ function App() {
                 <label>Servidor de Datos</label>
                 <div className="server-info">
                   <span className="server-dot"></span>
-                  Binance WebSockets (Direct)
+                  Binance Futures (Perpetuos)
                 </div>
               </div>
               
@@ -199,8 +201,12 @@ function App() {
               </div>
 
               <div className="setting-group">
-                <label>Tolerancia de Ballenas (500%)</label>
-                <select className="setting-select" defaultValue="500">
+                <label>Tolerancia de Ballenas ({whaleSensitivity}%)</label>
+                <select 
+                  className="setting-select" 
+                  value={whaleSensitivity}
+                  onChange={e => setWhaleSensitivity(e.target.value)}
+                >
                   <option value="300">Alta Sensibilidad (300%)</option>
                   <option value="500">Estándar (500%)</option>
                   <option value="1000">Solo Megalodones (1000%)</option>

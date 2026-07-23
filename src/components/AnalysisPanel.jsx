@@ -10,7 +10,7 @@ export default function AnalysisPanel({
   momentum = 50,
   cvdHistory = [],
   tapeSpeed = 0,
-  nearDepth = { bids05: 0, asks05: 0, bids10: 0, asks10: 0 }
+  nearDepth = { bids05: 0, asks05: 0, bids10: 0, asks10: 0, bids20: 0, asks20: 0 }
 }) {
   const { buyPressure, sellPressure } = stats;
 
@@ -66,12 +66,15 @@ export default function AnalysisPanel({
   const depthRatios = useMemo(() => {
     const t05 = nearDepth.bids05 + nearDepth.asks05 || 1;
     const t10 = nearDepth.bids10 + nearDepth.asks10 || 1;
+    const t20 = nearDepth.bids20 + nearDepth.asks20 || 1;
 
     return {
       b05Pct: ((nearDepth.bids05 / t05) * 100).toFixed(0),
       a05Pct: ((nearDepth.asks05 / t05) * 100).toFixed(0),
       b10Pct: ((nearDepth.bids10 / t10) * 100).toFixed(0),
       a10Pct: ((nearDepth.asks10 / t10) * 100).toFixed(0),
+      b20Pct: ((nearDepth.bids20 / t20) * 100).toFixed(0),
+      a20Pct: ((nearDepth.asks20 / t20) * 100).toFixed(0),
     };
   }, [nearDepth]);
 
@@ -80,7 +83,7 @@ export default function AnalysisPanel({
       <div className="panel-header">
         <div className="symbol-info">
           <h2>{symbol}</h2>
-          <span className="badge">Binance Spot</span>
+          <span className="badge">Binance Futures</span>
         </div>
         <div className="live-indicator">
           <span className="dot pulse"></span>
@@ -122,6 +125,13 @@ export default function AnalysisPanel({
           <div className="ratio-bar-bg">
             <div className="ratio-bar-bids" style={{ width: `${depthRatios.b10Pct}%` }}>{depthRatios.b10Pct}%</div>
             <div className="ratio-bar-asks" style={{ width: `${depthRatios.a10Pct}%` }}>{depthRatios.a10Pct}%</div>
+          </div>
+        </div>
+        <div className="depth-ratio-row" style={{ marginTop: '6px' }}>
+          <span className="ratio-label">Rango 2.0%</span>
+          <div className="ratio-bar-bg">
+            <div className="ratio-bar-bids" style={{ width: `${depthRatios.b20Pct}%` }}>{depthRatios.b20Pct}%</div>
+            <div className="ratio-bar-asks" style={{ width: `${depthRatios.a20Pct}%` }}>{depthRatios.a20Pct}%</div>
           </div>
         </div>
       </div>
@@ -198,7 +208,7 @@ export default function AnalysisPanel({
 
       {/* 6. AI Insights */}
       <div className="ai-insights">
-        <h3>AI Pattern Recognition</h3>
+        <h3>Análisis en Tiempo Real</h3>
         {insights.length === 0 ? (
           <div className="insight-card empty-insight">
             <span className="insight-icon">⏳</span>
@@ -210,11 +220,10 @@ export default function AnalysisPanel({
         ) : (
           <div className="insights-list">
             {insights.map(insight => (
-              <div key={insight.id} className={`insight-card severity-${insight.severity}`}>
+              <div key={insight.id} className={`insight-card insight-${insight.type || 'neutral'}`}>
                 <span className="insight-icon">{insight.icon}</span>
                 <div className="insight-text">
-                  <strong>{insight.title}</strong>
-                  <p>{insight.message}</p>
+                  <p>{insight.text}</p>
                 </div>
               </div>
             ))}

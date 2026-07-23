@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 export function useOrderBook(symbol = 'BTCUSDT') {
   // Estados para UI
   const [data, setData] = useState({ bids: [], asks: [] });
-  const [stats, setStats] = useState({ buyPressure: 50, sellPressure: 50 });
+  const [stats, setStats] = useState({ buyPressure: 50, sellPressure: 50, spread: 0, spreadPct: 0, bookImbalance: 0 });
   const [insights, setInsights] = useState([]);
   const [history, setHistory] = useState([]);
   const [currentPrice, setCurrentPrice] = useState(0);
@@ -18,7 +18,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
   // Estados analíticos avanzados
   const [cvdHistory, setCvdHistory] = useState([]);
   const [tapeSpeed, setTapeSpeed] = useState(0);
-  const [nearDepth, setNearDepth] = useState({ bids05: 0, asks05: 0, bids10: 0, asks10: 0 });
+  const [nearDepth, setNearDepth] = useState({ bids05: 0, asks05: 0, bids10: 0, asks10: 0, bids20: 0, asks20: 0 });
   const [recentTrades, setRecentTrades] = useState([]);
 
   // NUEVOS ESTADOS: Liquidaciones, Volume Profile, Whale Bubbles
@@ -28,7 +28,6 @@ export function useOrderBook(symbol = 'BTCUSDT') {
 
   // Referencias para optimización
   const previousWallsRef = useRef({ bidWall: null, askWall: null });
-  const activeAlertsRef = useRef([]);
   const latestDataRef = useRef(null);
   
   // Referencias internas
@@ -45,14 +44,15 @@ export function useOrderBook(symbol = 'BTCUSDT') {
   const whaleTradesRef = useRef([]);
 
   useEffect(() => {
-    let wsDepth = null;
     let wsTrade = null;
     let wsLiq = null;
     let uiUpdateInterval = null;
+    let depthPollInterval = null;
+    let isDepthConnected = false;
 
     // Reset state on symbol change
     setData({ bids: [], asks: [] });
-    setStats({ buyPressure: 50, sellPressure: 50 });
+    setStats({ buyPressure: 50, sellPressure: 50, spread: 0, spreadPct: 0, bookImbalance: 0 });
     setInsights([]);
     setHistory([]);
     setCurrentPrice(0);
@@ -63,13 +63,12 @@ export function useOrderBook(symbol = 'BTCUSDT') {
     setMomentum(50);
     setCvdHistory([]);
     setTapeSpeed(0);
-    setNearDepth({ bids05: 0, asks05: 0, bids10: 0, asks10: 0 });
+    setNearDepth({ bids05: 0, asks05: 0, bids10: 0, asks10: 0, bids20: 0, asks20: 0 });
     setRecentTrades([]);
     setLiquidations([]);
     setVolumeProfile({});
     setWhaleTrades([]);
     
-    activeAlertsRef.current = [];
     previousWallsRef.current = { bidWall: null, askWall: null };
     latestDataRef.current = null;
     recentTradesRef.current = [];
@@ -148,24 +147,33 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       const totalVolume = tBid + tAsk;
       const buyPressureNum = totalVolume > 0 ? (tBid / totalVolume) * 100 : 50;
       const sellPressureNum = totalVolume > 0 ? (tAsk / totalVolume) * 100 : 50;
+      
+      // NEW: Spread calculation
+      const spread = bestAsk - bestBid;
+      const spreadPct = livePrice > 0 ? (spread / livePrice) * 100 : 0;
+      
+      // NEW: Book imbalance
+      const bookImbalance = totalVolume > 0 ? ((tBid - tAsk) / totalVolume) * 100 : 0;
 
-      let bids05 = 0, bids10 = 0;
+      let bids05 = 0, bids10 = 0, bids20 = 0;
       responseBids.forEach(b => {
         const p = parseFloat(b[0]), a = parseFloat(b[1]);
         if (p >= livePrice * 0.995) bids05 += a;
         if (p >= livePrice * 0.990) bids10 += a;
+        if (p >= livePrice * 0.980) bids20 += a;
       });
 
-      let asks05 = 0, asks10 = 0;
+      let asks05 = 0, asks10 = 0, asks20 = 0;
       responseAsks.forEach(a => {
         const p = parseFloat(a[0]), am = parseFloat(a[1]);
         if (p <= livePrice * 1.005) asks05 += am;
         if (p <= livePrice * 1.010) asks10 += am;
+        if (p <= livePrice * 1.020) asks20 += am;
       });
 
       const currentInsights = [];
-      const avgBidAmount = tBid / 20;
-      const avgAskAmount = tAsk / 20;
+      const avgBidAmount = tBid / responseBids.length;
+      const avgAskAmount = tAsk / responseAsks.length;
       const now = Date.now();
       const timeStr = new Date(now).toLocaleTimeString();
 
@@ -200,6 +208,40 @@ export function useOrderBook(symbol = 'BTCUSDT') {
         if (total > 0) newMomentum = (buyVol / total) * 100;
       }
 
+      // Generate real-time market insights
+      if (currentBidWall) {
+        currentInsights.push({ id: 'wall_bid', icon: '🟢', text: `Muro de compra detectado: ${maxBidAmount.toFixed(2)} @ ${bidWallPriceStr}`, type: 'bullish' });
+      }
+      if (currentAskWall) {
+        currentInsights.push({ id: 'wall_ask', icon: '🔴', text: `Muro de venta detectado: ${maxAskAmount.toFixed(2)} @ ${askWallPriceStr}`, type: 'bearish' });
+      }
+      if (buyPressureNum > 60) {
+        currentInsights.push({ id: 'pressure_buy', icon: '📈', text: `Presión compradora dominante: ${buyPressureNum.toFixed(0)}%`, type: 'bullish' });
+      } else if (sellPressureNum > 60) {
+        currentInsights.push({ id: 'pressure_sell', icon: '📉', text: `Presión vendedora dominante: ${sellPressureNum.toFixed(0)}%`, type: 'bearish' });
+      }
+
+      // - Spread insight
+      if (spreadPct > 0.05) {
+        currentInsights.push({ id: 'spread_wide', icon: '⚠️', text: `Spread amplio: ${spread.toFixed(2)} (${spreadPct.toFixed(3)}%)`, type: 'neutral' });
+      } else if (spreadPct < 0.01) {
+        currentInsights.push({ id: 'spread_tight', icon: '✅', text: `Spread ultra-ajustado: ${spread.toFixed(2)} (${spreadPct.toFixed(4)}%)`, type: 'neutral' });
+      }
+      
+      // - Book imbalance insight
+      if (bookImbalance > 20) {
+        currentInsights.push({ id: 'imbalance_buy', icon: '🐂', text: `Desbalance alcista del libro: ${bookImbalance.toFixed(0)}% más demanda`, type: 'bullish' });
+      } else if (bookImbalance < -20) {
+        currentInsights.push({ id: 'imbalance_sell', icon: '🐻', text: `Desbalance bajista del libro: ${Math.abs(bookImbalance).toFixed(0)}% más oferta`, type: 'bearish' });
+      }
+
+      // - Momentum insight  
+      if (newMomentum > 70) {
+        currentInsights.push({ id: 'mom_bull', icon: '🚀', text: `Momentum agresivo comprador: ${newMomentum.toFixed(0)}%`, type: 'bullish' });
+      } else if (newMomentum < 30) {
+        currentInsights.push({ id: 'mom_bear', icon: '💣', text: `Momentum agresivo vendedor: ${(100 - newMomentum).toFixed(0)}%`, type: 'bearish' });
+      }
+
       const oneSecAgo = now - 1000;
       tradeTimestampsRef.current = tradeTimestampsRef.current.filter(ts => ts > oneSecAgo);
       
@@ -208,13 +250,19 @@ export function useOrderBook(symbol = 'BTCUSDT') {
 
       latestDataRef.current = {
         newData: { bids: newBids, asks: newAsks },
-        newStats: { buyPressure: buyPressureNum.toFixed(2), sellPressure: sellPressureNum.toFixed(2) },
-        newInsights: [...currentInsights, ...activeAlertsRef.current.filter(a => a.expires > now)],
+        newStats: { 
+          buyPressure: buyPressureNum.toFixed(2), 
+          sellPressure: sellPressureNum.toFixed(2),
+          spread: spread.toFixed(spread < 1 ? 4 : 2),
+          spreadPct: spreadPct.toFixed(4),
+          bookImbalance: bookImbalance.toFixed(1)
+        },
+        newInsights: [...currentInsights],
         newPrice: livePrice,
         newSupport: currentBidWall ? bidWallPriceStr : null,
         newResistance: currentAskWall ? askWallPriceStr : null,
         newMomentum: newMomentum,
-        newNearDepth: { bids05, asks05, bids10, asks10 },
+        newNearDepth: { bids05, asks05, bids10, asks10, bids20, asks20 },
         newCvdHistory: [...cvdHistoryRef.current],
         newTapeSpeed: tradeTimestampsRef.current.length,
         newRecentTrades: [...recentTradesFeedRef.current],
@@ -245,6 +293,14 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       const bucketSize = price > 1000 ? 10 : price > 100 ? 1 : 0.01;
       const priceBucket = (Math.round(price / bucketSize) * bucketSize).toString();
       volumeProfileRef.current[priceBucket] = (volumeProfileRef.current[priceBucket] || 0) + tradeVolumeUsdt;
+
+      // Limit volume profile buckets to prevent memory leak
+      const bucketKeys = Object.keys(volumeProfileRef.current);
+      if (bucketKeys.length > 200) {
+        const sortedKeys = bucketKeys.sort((a, b) => volumeProfileRef.current[a] - volumeProfileRef.current[b]);
+        const keysToRemove = sortedKeys.slice(0, bucketKeys.length - 200);
+        keysToRemove.forEach(k => delete volumeProfileRef.current[k]);
+      }
 
       const newTradeItem = {
         id: trade.a || Math.random(),
@@ -294,29 +350,35 @@ export function useOrderBook(symbol = 'BTCUSDT') {
       }
     };
 
-    // WebSocket Futures Depth
-    wsDepth = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@depth20@100ms`);
-    wsDepth.onopen = () => {
-      setIsConnected(true);
-      setConnectionError(false);
+    // NEW: REST polling instead of WebSocket for depth
+    const fetchDepth = () => {
+      fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}&limit=100`)
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP error');
+          return res.json();
+        })
+        .then(response => {
+          if (response.bids && response.asks && response.bids.length > 0 && response.asks.length > 0) {
+            if (!isDepthConnected) {
+              isDepthConnected = true;
+              setIsConnected(true);
+              setConnectionError(false);
+            }
+            processData(response.bids, response.asks);
+          }
+        })
+        .catch(() => {});
     };
-    wsDepth.onerror = () => setConnectionError(true);
-    wsDepth.onclose = () => setConnectionError(true);
-    wsDepth.onmessage = (event) => {
-      const response = JSON.parse(event.data);
-      const b = response.b || response.bids;
-      const a = response.a || response.asks;
-      if (b && a && b.length > 0 && a.length > 0) {
-        processData(b, a);
-      }
-    };
+
+    fetchDepth();
+    depthPollInterval = setInterval(fetchDepth, 500);
 
     // Connection Error Timeout
     const connectionTimeout = setTimeout(() => {
-      if (!latestDataRef.current && wsDepth && wsDepth.readyState !== WebSocket.OPEN) {
+      if (!isDepthConnected) {
         setConnectionError(true);
       }
-    }, 4000);
+    }, 5000);
 
     // WebSocket Futures Trades
     wsTrade = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@aggTrade`);
@@ -363,7 +425,7 @@ export function useOrderBook(symbol = 'BTCUSDT') {
 
     return () => {
       clearTimeout(connectionTimeout);
-      if (wsDepth) wsDepth.close();
+      clearInterval(depthPollInterval);
       if (wsTrade) wsTrade.close();
       if (wsLiq) wsLiq.close();
       if (uiUpdateInterval) clearInterval(uiUpdateInterval);

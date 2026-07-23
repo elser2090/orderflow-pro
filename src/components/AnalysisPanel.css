@@ -152,6 +152,25 @@
   100% { box-shadow: 0 0 0 0 rgba(246,70,93, 0); }
 }
 
+/* New Insight Type Styles */
+.insight-bullish {
+  background: linear-gradient(145deg, rgba(14, 203, 129, 0.1) 0%, rgba(24,26,32,0) 100%);
+  border: 1px solid rgba(14, 203, 129, 0.3);
+}
+.insight-bullish .insight-text p { color: var(--color-buy); }
+
+.insight-bearish {
+  background: linear-gradient(145deg, rgba(246, 70, 93, 0.1) 0%, rgba(24,26,32,0) 100%);
+  border: 1px solid rgba(246, 70, 93, 0.3);
+}
+.insight-bearish .insight-text p { color: var(--color-sell); }
+
+.insight-neutral {
+  background: linear-gradient(145deg, rgba(252, 213, 53, 0.08) 0%, rgba(24,26,32,0) 100%);
+  border: 1px solid rgba(252, 213, 53, 0.2);
+}
+.insight-neutral .insight-text p { color: var(--color-highlight); }
+
 .insight-icon {
   font-size: 24px;
 }

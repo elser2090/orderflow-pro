@@ -13,12 +13,60 @@
 .ob-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 12px;
-  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.ob-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ob-grouping {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 3px;
+  border-radius: 6px;
+}
+
+.ob-group-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ob-group-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ob-group-btn.active {
+  background: var(--color-highlight);
+  color: #000;
+}
+
+.ob-col-headers {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  font-size: 11px;
   color: var(--text-secondary);
   font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .ob-col {

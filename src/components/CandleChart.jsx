@@ -14,7 +14,7 @@ export default function CandleChart({ symbol }) {
   const chartInstance = useRef(null);
   const candlestickSeries = useRef(null);
   
-  const [interval, setInterval] = useState('15m');
+  const [timeframe, setTimeframe] = useState('15m');
   const [isChartReady, setIsChartReady] = useState(false);
 
   useEffect(() => {
@@ -71,11 +71,13 @@ export default function CandleChart({ symbol }) {
 
     let wsKline = null;
     let isFetchingHistory = true;
+    let cancelled = false;
 
     // Primero obtener historial de velas a través de API REST de Futuros
-    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=200`)
+    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol.toUpperCase()}&interval=${timeframe}&limit=200`)
       .then(res => res.json())
       .then(data => {
+        if (cancelled) return;
         const historicalData = data.map(d => ({
           time: d[0] / 1000,
           open: parseFloat(d[1]),
@@ -86,8 +88,9 @@ export default function CandleChart({ symbol }) {
         candlestickSeries.current.setData(historicalData);
         isFetchingHistory = false;
 
+        if (cancelled) return;
         // Conectar a WebSocket de Futuros para actualizaciones en vivo
-        wsKline = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@kline_${interval}`);
+        wsKline = new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@kline_${timeframe}`);
         wsKline.onmessage = (event) => {
           const message = JSON.parse(event.data);
           const kline = message.k;
@@ -104,9 +107,10 @@ export default function CandleChart({ symbol }) {
       .catch(err => console.error("Error fetching klines:", err));
 
     return () => {
+      cancelled = true;
       if (wsKline) wsKline.close();
     };
-  }, [symbol, interval, isChartReady]);
+  }, [symbol, timeframe, isChartReady]);
 
   return (
     <div className="candle-chart-panel">
@@ -118,8 +122,8 @@ export default function CandleChart({ symbol }) {
           {TIMEFRAMES.map(tf => (
             <button
               key={tf.value}
-              className={`tf-btn ${interval === tf.value ? 'active' : ''}`}
-              onClick={() => setInterval(tf.value)}
+              className={`tf-btn ${timeframe === tf.value ? 'active' : ''}`}
+              onClick={() => setTimeframe(tf.value)}
             >
               {tf.label}
             </button>
