@@ -3,12 +3,13 @@ import { useOrderBook } from './hooks/useOrderBook';
 import OrderBook from './components/OrderBook';
 import DepthChart from './components/DepthChart';
 import AnalysisPanel from './components/AnalysisPanel';
-import NotificationHistory from './components/NotificationHistory';
 import RecentTrades from './components/RecentTrades';
 import WhaleBubbleChart from './components/WhaleBubbleChart';
 import VolumeProfile from './components/VolumeProfile';
 import LiquidationFeed from './components/LiquidationFeed';
 import CandleChart from './components/CandleChart';
+import TradeSignal from './components/TradeSignal';
+import EventLog from './components/EventLog';
 import './App.css';
 
 // Activos del Mercado de Futuros (Perpetuos)
@@ -35,7 +36,7 @@ function App() {
     liquidations, volumeProfile, whaleTrades
   } = useOrderBook(symbol);
 
-  // Fix #9: Derive price color without causing extra renders
+  // Derive price color without causing extra renders
   const prevPriceRef = useRef(currentPrice);
   const priceColor = useMemo(() => {
     let color = 'var(--color-buy)';
@@ -134,6 +135,17 @@ function App() {
                 tapeSpeed={tapeSpeed}
                 nearDepth={nearDepth}
               />
+              <TradeSignal
+                stats={stats}
+                momentum={momentum}
+                cvdHistory={cvdHistory}
+                supportPrice={supportPrice}
+                resistancePrice={resistancePrice}
+                tapeSpeed={tapeSpeed}
+                nearDepth={nearDepth}
+                currentPrice={currentPrice}
+                symbol={symbol}
+              />
               <VolumeProfile 
                 volumeProfile={volumeProfile} 
                 currentPrice={currentPrice} 
@@ -155,7 +167,7 @@ function App() {
                  </div>
                </div>
                
-               <NotificationHistory history={history} />
+               <EventLog history={history} />
             </div>
 
             <div className="right-column">
